@@ -12,35 +12,77 @@
 #include "simAVRHeader.h"
 #endif
 
+enum States {Start, Begin, Init, Reset, Plus, Minus, PlusOn, MinusOn} state ;
+void Tick() {
+	switch(state) {
+		case Start:
+			state = Begin ;
+			break ;
+		case Begin:
+			state = Init ;
+			break ;
+		case Init:
+			if((~PINA & 0x03) == 0x03) state = Reset ;
+			else if ((~PINA & 0x01) == 0x01) state = PlusOn ;
+			else if ((~PINA & 0x02) == 0x02) state = MinusOn ;
+			break ;
+		case Reset:
+			if((~PINA & 0x03) == 0x03) state = Reset ;
+                        else state = Init ;
+                        break ;
+		case Plus:
+			if((~PINA & 0x03) == 0x01) state = Plus ;
+                        else state = Init ;
+                        break ;
+		case PlusOn:
+			state = Plus ;
+			break ;
+		case Minus:
+                        if((~PINA & 0x03) == 0x02) state = Minus ;
+                        else state = Init ;
+                        break ;
+		case MinusOn:
+			state = Minus ;
+			break ;
+		default:
+			state = Start ;
+			break ;
+	}
+	switch(state) {
+		case Start:
+			PORTC = 0x07 ;
+			break ;
+		case Begin:
+			PORTC = 0x07 ;
+			break ;
+		case Init:
+			break ;
+		case Plus:
+			break ;
+		case Minus:
+			break ;
+		case PlusOn:
+			if (PORTC < 0x09) PORTC = PORTC + 1 ;
+                        break ;
+		case MinusOn:
+			if (PORTC > 0x00) PORTC = PORTC - 1 ;
+                        break ;
+		case Reset:
+			PORTC = 0x00 ;
+			break ;
+		default:
+			PORTC = 0x07 ;
+			break ;
+	}
+}
+
 int main(void) {
-	DDRA = 0x00 ; PORTA = 0xFF ;
-	DDRC = 0xFF ; PORTC = 0x00 ;
-	unsigned char a, c ;
+    /* Insert DDR and PORT initializations */
+    /* Insert your solution below */
+    DDRA = 0x00 ; PORTA = 0xFF ;
+    DDRC = 0xFF ; PORTC = 0x00 ;
     while (1) {
-	a = PINA ;
-	c = 0x00 ;
-	if (((a & 0x0D) == 0x0D) || ((a & 0x0E) == 0x0E) || ((a & 0x0F) == 0x0F)) {
-                c = 0x3F ;
-        }
-	else if (((a & 0x0A) == 0x0A) || ((a & 0x0B) == 0x0B) || ((a & 0x0C) == 0x0C)) {
-                c = 0x3E ;
-        }
-	else if (((a & 0x07) == 0x07) || ((a & 0x08) == 0x08) || ((a & 0x09) == 0x09)) {
-                c = 0x3C ;
-        }
-	else if (((a & 0x05) == 0x05) || ((a & 0x06) == 0x06)) {
-                c = 0x38 ;
-        }
-	else if (((a & 0x03) == 0x03) || ((a & 0x04) == 0x04)) {
-                c = 0x70 ;
-        }
-	else if (((a & 0x01) == 0x01) || ((a & 0x02) == 0x02)) {
-		c = 0x60 ;
-	}
-	else {
-		c = 0x40 ;
-	}
-	PORTC = c ;
+	Tick() ;
     }
-    return 1;
+    return 1 ;
 }
